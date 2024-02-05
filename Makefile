@@ -6,7 +6,7 @@ CFLAGS = -Wall
 TARGET = seashell.out
 
 # Source files
-SRCS = main.c
+SRCS = $(wildcard *.c)
 
 # Object files
 OBJS = $(SRCS:.c=.o)
