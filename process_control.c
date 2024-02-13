@@ -5,7 +5,9 @@
 #include <assert.h>
 
 void process(char *arg){
-    char *token = NULL;
+
+    if(!strcmp(arg, "exit\n")) return; // Exit command
+
     int rc = fork();
 
     if (rc < 0){
@@ -14,6 +16,9 @@ void process(char *arg){
     }
     else if(rc == 0){
         // Child
+
+        // TODO: Initalize args function to abstract this
+
         if(arg[strlen(arg) - 1] == '\n') arg[strlen(arg) - 1] = '\0';   // Remove newline
         size_t index = 0;
         size_t capacity = 2; // Starts at 2 to have arg + NULL
@@ -21,8 +26,10 @@ void process(char *arg){
         char **args = (char**)malloc(sizeof(char *) * capacity); // Cannot use char *args[]. This defines a static-sized array which cannot be malloced
         if(!args) assert(args);
 
+        char *token;
+
         // Parse arguments, adding them to args array
-        while((token = strsep(&arg, " "))){
+        while(token = strsep(&arg, " ")){
             // Ensure first command is valid
             if(index == 0){
                 args[index] = strdup("/bin/"); 
