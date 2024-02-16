@@ -1,2 +1,2 @@
 // Create new process for command
-int process(char *arg);
+void process(char *arg);

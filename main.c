@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "process_control.h"
 
 int main(void){
@@ -22,6 +21,8 @@ int main(void){
         // Intermediate buffer to parse tokens, sets to NULL at the end of string
         // Don't want to modify pointer of original buffer
         midbuffer = buffer;
+        if(midbuffer[strlen(midbuffer) - 1] == '\n') midbuffer[strlen(midbuffer) - 1] = '\0';   // Remove newline
+        // TODO: Formatting input (stripping whitepsace)
         process(midbuffer);
 
         // Function to check if using path command
