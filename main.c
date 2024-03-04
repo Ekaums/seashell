@@ -5,7 +5,7 @@
 
 int main(void){
     char *buffer = NULL;
-    char *midbuffer = NULL;
+    char *arg = NULL;
     size_t size = 0;
 
     do{
@@ -14,16 +14,16 @@ int main(void){
         ssize_t input = getline(&buffer, &size, stdin); // Get variable sized input from user
 
         if (input == -1){
-            fprintf(stderr, "ERROR\n");
+            printf("ERROR\n");
             return -1;
         }
 
         // Intermediate buffer to parse tokens, sets to NULL at the end of string
         // Don't want to modify pointer of original buffer
-        midbuffer = buffer;
-        if(midbuffer[strlen(midbuffer) - 1] == '\n') midbuffer[strlen(midbuffer) - 1] = '\0';   // Remove newline
-        // TODO: Formatting input (stripping whitepsace)
-        process(midbuffer);
+        arg = buffer;
+        if(arg[strlen(arg) - 1] == '\n') arg[strlen(arg) - 1] = '\0';   // Remove newline
+        // TODO: Formatting input (stripping whitespace)
+        process(arg);
 
         // Function to check if using path command
 
