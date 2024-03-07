@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "process_control.h"
+#include "input_parse.h"
 
 int main(void){
     char *buffer = NULL;
-    char *arg = NULL;
     size_t size = 0;
 
     do{
@@ -18,11 +18,8 @@ int main(void){
             return -1;
         }
 
-        // Intermediate buffer to parse tokens, sets to NULL at the end of string
-        // Don't want to modify pointer of original buffer
-        arg = buffer;
-        if(arg[strlen(arg) - 1] == '\n') arg[strlen(arg) - 1] = '\0';   // Remove newline
-        // TODO: Formatting input (stripping whitespace)
+        char *arg = buffer; // Intermediate string to parse tokens, don't want to modify pointer of original buffer
+        arg = trim_whitespace(arg);
         process(arg);
 
         // Function to check if using path command

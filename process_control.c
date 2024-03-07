@@ -6,25 +6,14 @@
 #include "process_control.h"
 
 static void path_command(char *arg);
+static int builtin_command(char *arg);
 
 void process(char *arg){
-    
-    if(!strcmp(arg, "exit")){
-        exit(0);
-    }
 
-    char *temp_arg = strdup(arg); // Use temp ptr to validate argument (as strsep manipulates the pointer)
-    char *next_token = strsep(&temp_arg, " ");
-
-    if(!strcmp(next_token, "cd")){
-        next_token = strsep(&temp_arg, " ");
-        if(chdir(next_token) != 0){ // Change directory (if valid)
-            printf("Error: Invalid directory\n");
-        }
+    if(builtin_command(arg)){ // Run cd or exit
         return;
     }
 
-    // TODO: Forking in another function
     int rc = fork();
 
     if (rc < 0){
@@ -88,4 +77,23 @@ static void path_command(char *arg){
     // Should never reach here
     printf("Failed path command\n");
     exit(1);
+}
+
+int builtin_command(char *arg){
+
+    if(!strcmp(arg, "exit")){
+        exit(0);
+    }
+
+    char *temp_arg = strdup(arg); // Use temp ptr to validate argument (as strsep manipulates the pointer)
+    char *next_token = strsep(&temp_arg, " ");
+
+    if(!strcmp(next_token, "cd")){
+        next_token = strsep(&temp_arg, " ");
+        if(chdir(next_token) != 0){ // Change directory (if valid)
+            printf("Error: Invalid directory\n");
+        }
+        return 1;
+    }
+    return 0;
 }
