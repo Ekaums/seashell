@@ -47,15 +47,24 @@ int builtin_command(char *arg){
         exit(0);
     }
 
-    char *temp_arg = strdup(arg); // Use temp ptr to validate argument (as strsep manipulates the pointer)
-    char *next_token = strsep(&temp_arg, " ");
+    char *temp_arg = strdup(arg); // Duplicate the string for manipulation
+    if(temp_arg == NULL){
+        printf("malloc error");
+        exit(1);
+    }
+    char *curr_pos = temp_arg; // Use local var to parse string, to ensure temp_arg can be freed correctly
+
+    char *next_token = strsep(&curr_pos, " ");
 
     if(!strcmp(next_token, "cd")){
-        next_token = strsep(&temp_arg, " ");
+        next_token = strsep(&curr_pos, " ");
         if(chdir(next_token) != 0){ // Change directory (if valid)
             printf("Error: Invalid directory\n");
         }
+        free(temp_arg);
         return 1;
     }
+
+    free(temp_arg);
     return 0;
 }

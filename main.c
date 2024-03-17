@@ -22,8 +22,6 @@ int main(void){
         arg = trim_whitespace(arg);
         process(arg);
 
-        // Function to check if using path command
-
     }while((strcmp(buffer, "exit\n")));
     
     free(buffer);
