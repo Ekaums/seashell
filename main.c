@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "process_control.h"
-#include "input_parse.h"
+#include "process_control/process_control.h"
+#include "input_parse/input_parse.h"
 
 int main(void){
     char *buffer = NULL;

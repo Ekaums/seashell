@@ -6,7 +6,7 @@ CFLAGS = -Wall
 TARGET = seashell.out
 
 # Source files
-SRCS = $(wildcard *.c)
+SRCS = $(shell find . -type f -name '*.c')
 
 # Object files
 OBJS = $(SRCS:.c=.o)

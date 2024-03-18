@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include "process_control.h"
-#include "input_parse.h"
+#include "../input_parse/input_parse.h"
 
 static void path_command(char *arg);
 static int builtin_command(char *arg);
