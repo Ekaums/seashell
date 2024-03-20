@@ -1,26 +1,38 @@
+# Makefile for C++ project (Do not change this file)
+
 # Compiler and flags
-CC = gcc
-CFLAGS = -Wall
+CXX = g++
+CXXFLAGS = -std=c++11 -Wall
 
 # Executable name
 TARGET = seashell.out
 
 # Source files
-SRCS = $(shell find . -type f -name '*.c')
+SRCS = $(wildcard *.cpp)
 
 # Object files
-OBJS = $(SRCS:.c=.o)
+OBJS = $(SRCS:.cpp=.o)
+
+# Dependency files
+DEPS = $(SRCS:.cpp=.d)
 
 # Compile and link
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
 
 # Compile source files to object files
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Generate dependency files
+%.d: %.cpp
+	@$(CXX) $(CXXFLAGS) -MM $< | sed 's/$*\.o/& $@/g' > $@
+
+# Include dependency files
+-include $(DEPS)
 
 .PHONY: clean
 
 # Clean up
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -f $(TARGET) $(OBJS) $(DEPS)
