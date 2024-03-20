@@ -1,6 +1,6 @@
 # seashell
 
-A Unix-based Shell in C
+A Unix-based Shell in C++
 
 
 
