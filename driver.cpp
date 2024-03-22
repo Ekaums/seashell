@@ -1,15 +1,16 @@
 #include <iostream>
-#include "process_control.h"
+#include "run_process.h"
 
 int main(){
-    std::string command;
+    std::string input;
+    RunProcess command = RunProcess();
 
     do{
         std::cout << "shell> ";
-        std::getline(std::cin, command);
+        std::getline(std::cin, input);
 
-        process(command);
+        command.process(input);
 
-    }while(command != "exit");
+    }while(input != "exit");
 
 }
