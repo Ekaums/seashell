@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-void RunProcess::process(const std::string &arg){
+void RunProcess::execute_process(const std::string &arg){
 
     if(arg == "exit"){
         return;
@@ -16,7 +16,7 @@ void RunProcess::process(const std::string &arg){
         return;
     }
     else if(rc == 0){ // Child
-        std::vector<std::string> args = parseArgs(arg); // What is a const vector? and what does refernece do again
+        std::vector<std::string> args = parse_args(arg); // What is a const vector? and what does refernece do again
         
         // Convert args to char *array
         // TODO: const char * vs char * const???
@@ -39,7 +39,7 @@ void RunProcess::process(const std::string &arg){
     return;
 }
 
-std::vector<std::string> RunProcess::parseArgs(const std::string& input){
+std::vector<std::string> RunProcess::parse_args(const std::string& input){
 
     std::istringstream inputStream(input); // Define the string as an input stream, to read from
     std::string token;
@@ -47,7 +47,7 @@ std::vector<std::string> RunProcess::parseArgs(const std::string& input){
 
     std::string firstToken;
 
-    if((firstToken = pathAccess(token)) == ""){ // Check if command present in /bin or /usr/bin
+    if((firstToken = path_access(token)) == ""){ // Check if command present in /bin or /usr/bin
         std::cerr << "Invalid Command" << std::endl;
         exit(1);
     } 
@@ -58,15 +58,15 @@ std::vector<std::string> RunProcess::parseArgs(const std::string& input){
     while(inputStream >> token){ // Insert all args
 
         if(token == ">"){
-            outputRedirect(inputStream);
+            output_redirect(inputStream);
             continue;
         }   
         else if(token == ">>"){
-            outputAppendRedirect(inputStream);
+            output_append_redirect(inputStream);
             continue;
         }
         else if(token == "<"){
-            inputRedirect(inputStream);
+            input_redirect(inputStream);
             continue;
         }
         exec.push_back(token);
@@ -76,7 +76,7 @@ std::vector<std::string> RunProcess::parseArgs(const std::string& input){
 }
 
 // Check if valid command
-std::string RunProcess::pathAccess(const std::string& token){
+std::string RunProcess::path_access(const std::string& token){
     std::string binPathName = "/bin/" + token;
     std::string usrPathName = "/usr/bin/" + token;
 
@@ -91,7 +91,7 @@ std::string RunProcess::pathAccess(const std::string& token){
     return "";
 }
 
-void RunProcess::inputRedirect(std::istringstream &inputStream){
+void RunProcess::input_redirect(std::istringstream &inputStream){
     std::string token;
     if(!(inputStream >> token)){ // If no input file given
         std::cerr << "Invalid Command: No input file" << std::endl;
@@ -110,7 +110,7 @@ void RunProcess::inputRedirect(std::istringstream &inputStream){
     }
 }
 
-void RunProcess::outputRedirect(std::istringstream &inputStream){
+void RunProcess::output_redirect(std::istringstream &inputStream){
     std::string token;
 
     if(!(inputStream >> token)){ // If no output file given (reached end of input stream)
@@ -129,7 +129,7 @@ void RunProcess::outputRedirect(std::istringstream &inputStream){
     }    
 }
 
-void RunProcess::outputAppendRedirect(std::istringstream &inputStream){
+void RunProcess::output_append_redirect(std::istringstream &inputStream){
     std::string token;
 
     if(!(inputStream >> token)){ // If no output file given (reached end of input stream)

@@ -9,7 +9,7 @@ int main(){
         std::cout << "shell> ";
         std::getline(std::cin, input);
 
-        command.process(input);
+        command.execute_process(input);
 
     }while(input != "exit");
 
