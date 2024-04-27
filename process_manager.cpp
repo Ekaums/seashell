@@ -1,46 +1,63 @@
-#include "run_process.h"
+#include "process_manager.h"
+#include "pipe_manager.h"
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
 #include <fcntl.h>
 
-void RunProcess::execute_process(const std::string &arg){
+void ProcessManager::execute_command(const std::string &arg){
 
     if(arg == "exit"){
         return;
     }
-    int rc = fork();
+
+    if(arg.find('|') != std::string::npos){
+        PipeManager pipeManager = PipeManager();
+        pipeManager.execute_pipe_command(arg); // Piping commands are handled seperately
+        return;
+    }
+
+    int rc = fork(); // All commands are handled through a fork--exec procedure
 
     if (rc < 0){
         std::cerr << "Forking error" << std::endl;
         return;
     }
     else if(rc == 0){ // Child
-        std::vector<std::string> args = parse_args(arg); // What is a const vector? and what does refernece do again
-        
-        // Convert args to char *array
-        // TODO: const char * vs char * const???
-        char **exec = new char*[args.size()+1];
-
-        for(int i = 0; i < args.size(); i++){
-            exec[i] = &args[i][0];
+        std::vector<std::string> args = parse_args(arg);  // Parse input, handling I/O redirection accordingly
+        if(args.empty()){
+            exit(1);
         }
-        exec[args.size()+1] = nullptr;
-        // call execv with these args
-        execv(exec[0], exec);
-
-        std::cerr << "execv error" << std::endl; // execv only returns if an error occured
-        return;
+        execute_process(args); 
     }
     else{ // Parent
-        int rc_wait = wait(NULL);
+        int status;
+        while(wait(&status) > 0); // Parent waits until ALL child processes have completed
     }
 
     return;
 }
 
-std::vector<std::string> RunProcess::parse_args(const std::string& input){
 
+void ProcessManager::execute_process(std::vector<std::string> &args){
+        
+    char **exec = new char*[args.size()+1];
+
+    for(int i = 0; i < args.size(); i++){
+        exec[i] = &args[i][0]; // Insert all args into array
+    }
+
+    exec[args.size()+1] = nullptr;
+
+    // call execv with these args
+    execv(exec[0], exec);
+
+    std::cerr << "execv error" << std::endl; // execv only returns if an error occured
+    exit(1);
+}
+
+
+std::vector<std::string> ProcessManager::parse_args(const std::string& input){
     std::istringstream inputStream(input); // Define the string as an input stream, to read from
     std::string token;
     inputStream >> token;
@@ -49,7 +66,7 @@ std::vector<std::string> RunProcess::parse_args(const std::string& input){
 
     if((firstToken = path_access(token)) == ""){ // Check if command present in /bin or /usr/bin
         std::cerr << "Invalid Command" << std::endl;
-        exit(1);
+        return {};
     } 
 
     std::vector<std::string> exec; // Array of arguments
@@ -69,14 +86,55 @@ std::vector<std::string> RunProcess::parse_args(const std::string& input){
             input_redirect(inputStream);
             continue;
         }
+        else if(token.at(0) == '\''){
+            token.erase(0, 1);
+
+            if(token.back() == '\''){ // Check if the argument is a single word
+                token.pop_back();
+                exec.push_back(token);
+                continue;
+            }
+
+            inputStream >> std::noskipws;
+            char ch;
+
+            while(inputStream.get(ch)){ // Next argument is all characters in this quote
+                if(ch == '\''){
+                    break;
+                }
+                token += ch;
+            }
+
+            inputStream >> std::skipws;
+        }
+        else if(token.at(0) == '\"'){
+            token.erase(0, 1);
+
+            if(token.back() == '\"'){ // Check if the argument is a single word
+                token.pop_back();
+                exec.push_back(token);
+                continue;
+            }
+
+            inputStream >> std::noskipws;
+            char ch;
+
+            while(inputStream.get(ch)){ // Next argument is all characters in this quote
+                if(ch == '\"'){
+                    break;
+                }
+                token += ch;
+            }
+
+            inputStream >> std::skipws;
+        }
         exec.push_back(token);
     }
 
     return exec;
 }
 
-// Check if valid command
-std::string RunProcess::path_access(const std::string& token){
+std::string ProcessManager::path_access(const std::string& token){
     std::string binPathName = "/bin/" + token;
     std::string usrPathName = "/usr/bin/" + token;
 
@@ -91,7 +149,7 @@ std::string RunProcess::path_access(const std::string& token){
     return "";
 }
 
-void RunProcess::input_redirect(std::istringstream &inputStream){
+void ProcessManager::input_redirect(std::istringstream &inputStream){
     std::string token;
     if(!(inputStream >> token)){ // If no input file given
         std::cerr << "Invalid Command: No input file" << std::endl;
@@ -110,7 +168,7 @@ void RunProcess::input_redirect(std::istringstream &inputStream){
     }
 }
 
-void RunProcess::output_redirect(std::istringstream &inputStream){
+void ProcessManager::output_redirect(std::istringstream &inputStream){
     std::string token;
 
     if(!(inputStream >> token)){ // If no output file given (reached end of input stream)
@@ -129,7 +187,7 @@ void RunProcess::output_redirect(std::istringstream &inputStream){
     }    
 }
 
-void RunProcess::output_append_redirect(std::istringstream &inputStream){
+void ProcessManager::output_append_redirect(std::istringstream &inputStream){
     std::string token;
 
     if(!(inputStream >> token)){ // If no output file given (reached end of input stream)
