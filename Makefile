@@ -31,8 +31,13 @@ $(TARGET): $(OBJS)
 # Include dependency files
 -include $(DEPS)
 
-.PHONY: clean
+.PHONY: clean go
 
 # Clean up
 clean:
 	rm -f $(TARGET) $(OBJS) $(DEPS)
+
+# Clean, compile, and run
+# TODO: Clean this up lol
+go:
+	make clean && make && ./seashell.out

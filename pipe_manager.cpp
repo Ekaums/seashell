@@ -3,6 +3,7 @@
 #include <iostream>
 #include <unistd.h>
 #include "pipe_manager.h"
+#include "process_manager.h"
 
 
 void PipeManager::execute_pipe_command(const std::string& pipe_command){
@@ -13,27 +14,41 @@ void PipeManager::execute_pipe_command(const std::string& pipe_command){
 
     int dup_stdin = dup(STDIN_FILENO); // Save terminal output fd, to map output to after we are done piping
 
-    while(std::getline(input, command, '|')){ // For every pipe command
-        if (!input.eof()){ // (Until the last one)
+    // Piping commands are all placed in the same process group, to handle as one "command"
+    bool first = false;
+    int group_pid;
+
+    while(std::getline(input, command, '|')){ // For every pipe command...
+        if (input.eof()){ // until the last one
+            break;
+        }
             int fd[2];
             pipe(fd);
             int rc = fork();
 
-            if(rc == 0){ // Child
-                std::vector<std::string> args = processManager.parse_args(command); // Parse args
-                if(args.empty()){
-                    exit(1);
+            if(first == false){ // Process group ID is set as the process ID of the first command (arbitrarily)
+                if(rc == 0){ 
+                    group_pid = getpid(); // Child saves it's own process ID
                 }
+                else{
+                    group_pid = rc; // Parent saves child's ID
+                }
+                first = true;
+            }
+
+            if(rc == 0){
+                setpgid(0, group_pid); // Set child's PGID to this group ID
+                std::vector<std::string> args = processManager.parse_args(command);
                 dup2(fd[1], STDOUT_FILENO); // Redirect output to write to pipe, which will be used as input to next commmand
                 processManager.execute_process(args);
             }
             else{
+                setpgid(rc, group_pid); // Set child's PGID to this group ID
                 dup2(fd[0], STDIN_FILENO); // Parent will set up input fd to read from this pipe, such that the next process can use this data
                 // Cleanup
                 close(fd[0]);
                 close(fd[1]);
             }
-        }
     }
 
     // The last command is handled seperately, as it's output is redirected to the terminal instead of another pipe
@@ -41,16 +56,16 @@ void PipeManager::execute_pipe_command(const std::string& pipe_command){
 
     // More of the same business
     if(rc == 0){
+        setpgid(0, group_pid);
         std::getline(input, command);
         std::vector<std::string> args = processManager.parse_args(command);
-        if(args.empty()){
-            exit(1);
-        }
         processManager.execute_process(args);
     }
     else{
-        int status;
-        while(wait(&status) > 0); // Parent will prompt user again once ALL processes in the pipe are done
+        setpgid(rc, group_pid);
+        waitpid(-group_pid, NULL, 0); // Parent waits until all processes in process group (all commands in the pipe) complete
+        
+        // After done  piping, reset output to terminal
         dup2(dup_stdin, STDIN_FILENO);
         close(dup_stdin);
     }

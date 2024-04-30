@@ -1,7 +1,5 @@
 #pragma once
-
 #include <string>
-#include "process_manager.h"
 
 class PipeManager{
     

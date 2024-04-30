@@ -1,5 +1,6 @@
 #include "process_manager.h"
 #include "pipe_manager.h"
+#include "job_control.h"
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
@@ -7,34 +8,35 @@
 
 void ProcessManager::execute_command(const std::string &arg){
 
-    if(arg == "exit"){
+    if(arg == "exit" || arg == ""){
         return;
     }
 
-    if(arg.find('|') != std::string::npos){
+    if(arg.find('&') != std::string::npos){ // Parallel commands (&)
+        JobControl jobManager = JobControl();
+        jobManager.process_parallel(arg);
+        return;
+    }
+
+    if(arg.find('|') != std::string::npos){  // Piping commands (|)
         PipeManager pipeManager = PipeManager();
-        pipeManager.execute_pipe_command(arg); // Piping commands are handled seperately
+        pipeManager.execute_pipe_command(arg);
         return;
     }
 
-    int rc = fork(); // All commands are handled through a fork--exec procedure
+    int pid = fork(); // All basic commands are simply handled through a fork--exec procedure
 
-    if (rc < 0){
-        std::cerr << "Forking error" << std::endl;
-        return;
-    }
-    else if(rc == 0){ // Child
+    if(pid == 0){ // Child
+        setpgid(0, 0); // Place child in its own process group
         std::vector<std::string> args = parse_args(arg);  // Parse input, handling I/O redirection accordingly
-        if(args.empty()){
-            exit(1);
-        }
         execute_process(args); 
     }
     else{ // Parent
-        int status;
-        while(wait(&status) > 0); // Parent waits until ALL child processes have completed
+        setpgid(pid, pid); // Ensure child is in it's own process group, if parent executes first. Avoids race condition! 
+        waitpid(pid, NULL, 0); // Parent waits until this process completes
     }
 
+    tcsetpgrp(STDIN_FILENO, getpgrp()); // Ensure shell regains control of terminal (may not be needed, but safe to have)
     return;
 }
 
@@ -53,6 +55,7 @@ void ProcessManager::execute_process(std::vector<std::string> &args){
     execv(exec[0], exec);
 
     std::cerr << "execv error" << std::endl; // execv only returns if an error occured
+    std::cerr << strerror(errno) << std::endl;
     exit(1);
 }
 
@@ -62,12 +65,7 @@ std::vector<std::string> ProcessManager::parse_args(const std::string& input){
     std::string token;
     inputStream >> token;
 
-    std::string firstToken;
-
-    if((firstToken = path_access(token)) == ""){ // Check if command present in /bin or /usr/bin
-        std::cerr << "Invalid Command" << std::endl;
-        return {};
-    } 
+    std::string firstToken = path_access(token); 
 
     std::vector<std::string> exec; // Array of arguments
     exec.push_back(firstToken); // Insert command
@@ -138,15 +136,17 @@ std::string ProcessManager::path_access(const std::string& token){
     std::string binPathName = "/bin/" + token;
     std::string usrPathName = "/usr/bin/" + token;
 
-    // Check /bin/ and /usr/bin
+    // Check if command is in /bin or /usr/bin
     if(access(binPathName.c_str(), X_OK) == 0){ 
         return binPathName;
     }
     else if(access(usrPathName.c_str(), X_OK) == 0){
         return usrPathName;
     }
-
-    return "";
+    else{
+        std::cerr << "Invalid Command" << std::endl;
+        exit(1);
+    }
 }
 
 void ProcessManager::input_redirect(std::istringstream &inputStream){

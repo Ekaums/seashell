@@ -1,5 +1,4 @@
 #pragma once
-
 #include <string>
 
 
@@ -25,4 +24,5 @@ class ProcessManager{
         void execute_command(const std::string &arg);
     
     friend class PipeManager; // Pipe commands will similarily be parsed and executed
+    friend class JobControl; // Parallel execution as well
 };
