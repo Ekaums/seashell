@@ -28,19 +28,8 @@ void JobControl::process_parallel(const std::string &arg){
         return;
     }
 
-    int rc = fork(); // Otherwise, the last command is a foreground job. User must wait for this process to complete before being doing anything
-
-    if(rc == 0){
-        setpgid(0, 0);
-        std::vector<std::string> args = processManager.parse_args(command);
-        processManager.execute_process(args);
-    }
-    else{
-        waitpid(rc, NULL, 0); // Wait for this foreground job to complete
-    }
-
-    tcsetpgrp(STDIN_FILENO, getpgrp());
-    return;
+    // Otherwise, the last command is a foreground job. User must wait for this process to complete before being doing anything
+    processManager.process_foreground_command(arg);
 }
 
 void JobControl::init_parallel(void){
@@ -61,16 +50,21 @@ void JobControl::handle_SIGCHLD(int sig){
 
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
         if (WIFEXITED(status)) {
-             // std::cout << "Child " << pid <<  " terminated with status: " << WEXITSTATUS(status) << std::endl;
+            std::cout << "Child " << pid <<  " terminated with status: " << WEXITSTATUS(status) << std::endl;
         } 
         else if (WIFSIGNALED(status)) {
-            // std::cout << "Child " << pid << " killed by signal: " << WTERMSIG(status) << std::endl;
+            if(WTERMSIG(status) == SIGINT){
+                std::cout << "Child killed by Ctrl-C" << std::endl;
+            }
+            else{
+                std::cout << "Child killed somehow" << std::endl;
+            }
         } 
         else if (WIFSTOPPED(status)) {
-            // std::cout << "child stopped" << std::endl;
+            std::cout << "child stopped" << std::endl;
         } 
         else if (WIFCONTINUED(status)) {
-            // std::cout << "child continued" << std::endl;
+            std::cout << "child continued" << std::endl;
         }
     }
 }

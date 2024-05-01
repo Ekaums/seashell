@@ -52,19 +52,24 @@ void PipeManager::execute_pipe_command(const std::string& pipe_command){
     }
 
     // The last command is handled seperately, as it's output is redirected to the terminal instead of another pipe
+    std::getline(input, command);
     int rc = fork();
 
     // More of the same business
     if(rc == 0){
         setpgid(0, group_pid);
-        std::getline(input, command);
         std::vector<std::string> args = processManager.parse_args(command);
         processManager.execute_process(args);
     }
     else{
         setpgid(rc, group_pid);
+        tcsetpgrp(STDIN_FILENO, group_pid); // Set child pgroup as foreground group
         waitpid(-group_pid, NULL, 0); // Parent waits until all processes in process group (all commands in the pipe) complete
         
+        signal(SIGTTOU, SIG_IGN); 
+        tcsetpgrp(STDIN_FILENO, getpgrp());
+        signal(SIGTTOU, SIG_DFL); 
+
         // After done  piping, reset output to terminal
         dup2(dup_stdin, STDIN_FILENO);
         close(dup_stdin);

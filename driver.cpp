@@ -8,19 +8,20 @@ int main(){
         Namespace refactor. How to inherit?
         Running parallel commands with piping
         Signal handling
+        Posix_spawn
     */
 
 
     std::string input;
     ProcessManager command = ProcessManager();
-    // JobControl control = JobControl();
-    // control.init_parallel();
+    //JobControl control = JobControl();
+    //control.init_parallel();
 
     do{
         std::cout << "shell> ";
         std::getline(std::cin, input);
 
-        command.execute_command(input);
+        command.process_command(input);
 
     }while(input != "exit");
 

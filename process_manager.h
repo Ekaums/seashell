@@ -16,12 +16,15 @@ class ProcessManager{
         // Parse arguments, setting up env to execute command
         std::vector<std::string> parse_args(const std::string& input);
 
+        // All simple foreground commands handled here
+        void process_foreground_command(const std::string &arg);
+
         // Run the process
         void execute_process(std::vector<std::string> &args);
 
     public:
-        // Handle user-input command cleanly
-        void execute_command(const std::string &arg);
+        // Handle user input
+        void process_command(const std::string &arg);
     
     friend class PipeManager; // Pipe commands will similarily be parsed and executed
     friend class JobControl; // Parallel execution as well

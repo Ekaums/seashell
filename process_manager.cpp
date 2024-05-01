@@ -6,7 +6,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-void ProcessManager::execute_command(const std::string &arg){
+
+
+void ProcessManager::process_command(const std::string &arg){
 
     if(arg == "exit" || arg == ""){
         return;
@@ -24,19 +26,34 @@ void ProcessManager::execute_command(const std::string &arg){
         return;
     }
 
-    int pid = fork(); // All basic commands are simply handled through a fork--exec procedure
+    process_foreground_command(arg);
+}
+
+
+void ProcessManager::process_foreground_command(const std::string &arg){
+
+    int pid = fork();
 
     if(pid == 0){ // Child
-        setpgid(0, 0); // Place child in its own process group
+        setpgid(0, 0); // Place in own process group
         std::vector<std::string> args = parse_args(arg);  // Parse input, handling I/O redirection accordingly
         execute_process(args); 
     }
     else{ // Parent
-        setpgid(pid, pid); // Ensure child is in it's own process group, if parent executes first. Avoids race condition! 
-        waitpid(pid, NULL, 0); // Parent waits until this process completes
+        setpgid(pid, pid); // Ensure child is in it's own pgroup. Avoids race condition!
+        tcsetpgrp(STDIN_FILENO, pid); // Set child pgroup as foreground group (Only parent can do this as it is in the CURRENT foreground group)
+        waitpid(pid, NULL, 0); // WUNTRACED???
+
+        /* 
+           Temporarily ignore SIGTTOU. After child completes, there are no processes left in the foreground group to reset the group. So 
+           the parent (still in the background) must do this. It must ignore the SIGTTOU signal, sent to processes that attempt to
+           manipulate the terminal while in the background
+        */
+        signal(SIGTTOU, SIG_IGN); 
+        tcsetpgrp(STDIN_FILENO, getpgrp());
+        signal(SIGTTOU, SIG_DFL); 
     }
 
-    tcsetpgrp(STDIN_FILENO, getpgrp()); // Ensure shell regains control of terminal (may not be needed, but safe to have)
     return;
 }
 
