@@ -16,7 +16,7 @@ class ProcessManager{
         // Parse arguments, setting up env to execute command
         std::vector<std::string> parse_args(const std::string& input);
 
-        // All simple foreground commands handled here
+        // Simple foreground commands handled here
         void process_foreground_command(const std::string &arg);
 
         // Run the process
