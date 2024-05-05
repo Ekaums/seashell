@@ -6,30 +6,18 @@
 #include <string>
 #include <unistd.h>
 
-void JobControl::process_parallel(const std::string &arg){
+JobControl jobby = JobControl();
 
-    std::istringstream input(arg);
-    std::string command;
-    ProcessManager processManager = ProcessManager();
+void JobControl::init_job(std::string command, pid_t pgid, int jobID, JobState state, bool isBG){
+    Job newJob = {
+        command,
+        pgid,
+        jobID,
+        state,
+        isBG,
+    };
 
-     while(std::getline(input, command, '&')){
-        if (input.eof()){ // Process all commands until the last one
-            break;
-        }
-
-        if(fork() == 0){
-            setpgid(0, 0); // Every process is placed into its own process group, for job control
-            std::vector<std::string> args = processManager.parse_args(command); // Parse args
-            processManager.execute_process(args);
-        }
-    }
-
-    if(command == ""){ // If the last token in the command is '&', there is nothing left to parse
-        return;
-    }
-
-    // Otherwise, the last command is a foreground job. User must wait for this process to complete before being doing anything
-    processManager.process_foreground_command(arg);
+    JobList.push_back(newJob);
 }
 
 void JobControl::init_parallel(void){
@@ -40,31 +28,83 @@ void JobControl::init_parallel(void){
     sigaction(SIGCHLD, &sa, NULL);
 }
 
-void JobControl::handle_SIGINT(int sig){
 
+void JobControl::listJobs(){
+    for(const auto& job : JobList){
+        std::cout << "Job [" << job.jobID << "]: " << job.command << " [" << ((bool)job.state ? "Running" : "Stopped") << "]" << std::endl;
+    }
+}
+
+
+
+int JobControl::get_next_jobID(void){
+    int id;
+
+    if(availableIDs.empty()){
+        id = nextJobID++;
+    }
+    else{
+        id = availableIDs.front();
+        availableIDs.pop();
+    }
+
+    activeIDs.insert(id);
+    return id;
+}
+
+void JobControl::recycle_jobID(int id){
+    activeIDs.erase(id);
+    availableIDs.push(id);
+}
+
+
+void JobControl::block_SIGCHLD(void){
+    sigset_t sigset;
+    sigemptyset(&sigset);
+    sigaddset(&sigset, SIGCHLD);
+    sigprocmask(SIG_BLOCK, &sigset, NULL);    
+}
+
+
+void JobControl::unblock_SIGCHLD(void){
+    sigset_t sigset;
+    sigemptyset(&sigset);
+    sigaddset(&sigset, SIGCHLD);
+    sigprocmask(SIG_UNBLOCK, &sigset, NULL);  
 }
     
 void JobControl::handle_SIGCHLD(int sig){
     int status;
     int pid;
+    bool enter = false;
 
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        enter = true;
         if (WIFEXITED(status)) {
-            std::cout << "Child " << pid <<  " terminated with status: " << WEXITSTATUS(status) << std::endl;
+            // Terminated
         } 
         else if (WIFSIGNALED(status)) {
             if(WTERMSIG(status) == SIGINT){
-                std::cout << "Child killed by Ctrl-C" << std::endl;
+                std::cout << std::endl; // Child killed by Ctrl-C
             }
             else{
                 std::cout << "Child killed somehow" << std::endl;
             }
         } 
         else if (WIFSTOPPED(status)) {
-            std::cout << "child stopped" << std::endl;
+            if(WSTOPSIG(status) == SIGTSTP){
+                std::cout << std::endl; // Child suspended by Ctrl-Z
+            }
+            else{
+                std::cout << "child paused somehow" << std::endl;
+            }
         } 
         else if (WIFCONTINUED(status)) {
             std::cout << "child continued" << std::endl;
         }
     }
+    if(!enter){
+        std::cout << std::endl;
+    }
+
 }

@@ -25,7 +25,9 @@ class ProcessManager{
     public:
         // Handle user input
         void process_command(const std::string &arg);
+
+        // Handle background commands
+        void process_parallel(const std::string &arg);
     
     friend class PipeManager; // Pipe commands will similarily be parsed and executed
-    friend class JobControl; // Parallel execution as well
 };

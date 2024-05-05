@@ -13,10 +13,14 @@ void ProcessManager::process_command(const std::string &arg){
     if(arg == "exit" || arg == ""){
         return;
     }
+    
+    if(arg == "jobs"){
+        jobby.listJobs();
+        return;
+    }
 
     if(arg.find('&') != std::string::npos){ // Parallel commands (&)
-        JobControl jobManager = JobControl();
-        jobManager.process_parallel(arg);
+        process_parallel(arg);
         return;
     }
 
@@ -30,8 +34,42 @@ void ProcessManager::process_command(const std::string &arg){
 }
 
 
+void ProcessManager::process_parallel(const std::string &arg){
+
+    std::istringstream input(arg);
+    std::string command;
+
+    jobby.block_SIGCHLD();
+
+    while(std::getline(input, command, '&')){
+        if (input.eof()){ // Process all commands until the last one
+            break;
+        }
+        int pid = fork();
+
+        if(pid == 0){
+            setpgid(0, 0); // Every process is placed into its own process group, for job control
+            std::vector<std::string> args = parse_args(command); // Parse args
+            execute_process(args);
+        }
+        else{
+            setpgid(pid, pid); // Ensure child is in it's own pgroup
+            jobby.init_job(command, pid, jobby.get_next_jobID(), JobState::running, false);        
+        }
+    }
+
+    if(command == ""){ // If the last token in the command is '&', there is nothing left to parse
+        jobby.unblock_SIGCHLD();
+        return;
+    }
+
+    // Otherwise, the last command is a foreground job. User must wait for this process to complete before being doing anything
+    process_foreground_command(arg);
+}
+
 void ProcessManager::process_foreground_command(const std::string &arg){
 
+    jobby.block_SIGCHLD();
     int pid = fork();
 
     if(pid == 0){ // Child
@@ -41,8 +79,15 @@ void ProcessManager::process_foreground_command(const std::string &arg){
     }
     else{ // Parent
         setpgid(pid, pid); // Ensure child is in it's own pgroup. Avoids race condition!
+
+        jobby.init_job(arg, pid, jobby.get_next_jobID(), JobState::running, false);
+
         tcsetpgrp(STDIN_FILENO, pid); // Set child pgroup as foreground group (Only parent can do this as it is in the CURRENT foreground group)
-        waitpid(pid, NULL, 0); // WUNTRACED???
+        
+        jobby.unblock_SIGCHLD();
+        
+        waitpid(pid, NULL, WUNTRACED);
+        //if (WIFSTOPPED(status)) { std::cout << "ctrlzed" << std::endl;}
 
         /* 
            Temporarily ignore SIGTTOU. After child completes, there are no processes left in the foreground group to reset the group. So 

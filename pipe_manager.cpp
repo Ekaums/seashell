@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include "pipe_manager.h"
 #include "process_manager.h"
+#include "job_control.h"
 
 
 void PipeManager::execute_pipe_command(const std::string& pipe_command){
@@ -17,6 +18,8 @@ void PipeManager::execute_pipe_command(const std::string& pipe_command){
     // Piping commands are all placed in the same process group, to handle as one "command"
     bool first = false;
     int group_pid;
+
+    jobby.block_SIGCHLD();
 
     while(std::getline(input, command, '|')){ // For every pipe command...
         if (input.eof()){ // until the last one
@@ -44,6 +47,9 @@ void PipeManager::execute_pipe_command(const std::string& pipe_command){
             }
             else{
                 setpgid(rc, group_pid); // Set child's PGID to this group ID
+
+                jobby.init_job(command, group_pid, jobby.get_next_jobID(), JobState::running, false);
+
                 dup2(fd[0], STDIN_FILENO); // Parent will set up input fd to read from this pipe, such that the next process can use this data
                 // Cleanup
                 close(fd[0]);
@@ -63,7 +69,13 @@ void PipeManager::execute_pipe_command(const std::string& pipe_command){
     }
     else{
         setpgid(rc, group_pid);
+
+        jobby.init_job(command, group_pid, jobby.get_next_jobID(), JobState::running, false);
+
         tcsetpgrp(STDIN_FILENO, group_pid); // Set child pgroup as foreground group
+
+        jobby.unblock_SIGCHLD();
+
         waitpid(-group_pid, NULL, 0); // Parent waits until all processes in process group (all commands in the pipe) complete
         
         signal(SIGTTOU, SIG_IGN); 
