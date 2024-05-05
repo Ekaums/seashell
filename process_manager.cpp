@@ -267,4 +267,3 @@ void ProcessManager::output_append_redirect(std::istringstream &inputStream){
         exit(1);
     }    
 }
-

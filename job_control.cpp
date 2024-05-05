@@ -57,21 +57,6 @@ void JobControl::recycle_jobID(int id){
     availableIDs.push(id);
 }
 
-
-void JobControl::block_SIGCHLD(void){
-    sigset_t sigset;
-    sigemptyset(&sigset);
-    sigaddset(&sigset, SIGCHLD);
-    sigprocmask(SIG_BLOCK, &sigset, NULL);    
-}
-
-
-void JobControl::unblock_SIGCHLD(void){
-    sigset_t sigset;
-    sigemptyset(&sigset);
-    sigaddset(&sigset, SIGCHLD);
-    sigprocmask(SIG_UNBLOCK, &sigset, NULL);  
-}
     
 void JobControl::handle_SIGCHLD(int sig){
     int status;
@@ -106,5 +91,20 @@ void JobControl::handle_SIGCHLD(int sig){
     if(!enter){
         std::cout << std::endl;
     }
+}
 
+
+void JobControl::block_SIGCHLD(void){
+    sigset_t sigset;
+    sigemptyset(&sigset);
+    sigaddset(&sigset, SIGCHLD);
+    sigprocmask(SIG_BLOCK, &sigset, NULL);    
+}
+
+
+void JobControl::unblock_SIGCHLD(void){
+    sigset_t sigset;
+    sigemptyset(&sigset);
+    sigaddset(&sigset, SIGCHLD);
+    sigprocmask(SIG_UNBLOCK, &sigset, NULL);  
 }
