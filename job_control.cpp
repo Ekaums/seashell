@@ -8,9 +8,10 @@
 
 JobControl jobby = JobControl();
 
-void JobControl::init_job(std::string command, pid_t pgid, int jobID, JobState state, bool isBG){
+void JobControl::init_job(std::string command, pid_t pid, pid_t pgid, int jobID, JobState state, bool isBG){
     Job newJob = {
         command,
+        pid,
         pgid,
         jobID,
         state,
@@ -34,7 +35,6 @@ void JobControl::listJobs(){
         std::cout << "Job [" << job.jobID << "]: " << job.command << " [" << ((bool)job.state ? "Running" : "Stopped") << "]" << std::endl;
     }
 }
-
 
 
 int JobControl::get_next_jobID(void){
@@ -65,10 +65,10 @@ void JobControl::handle_SIGCHLD(int sig){
 
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
         enter = true;
-        if (WIFEXITED(status)) {
+        if (WIFEXITED(status)){
             // Terminated
         } 
-        else if (WIFSIGNALED(status)) {
+        else if (WIFSIGNALED(status)){
             if(WTERMSIG(status) == SIGINT){
                 std::cout << std::endl; // Child killed by Ctrl-C
             }
@@ -76,7 +76,7 @@ void JobControl::handle_SIGCHLD(int sig){
                 std::cout << "Child killed somehow" << std::endl;
             }
         } 
-        else if (WIFSTOPPED(status)) {
+        else if (WIFSTOPPED(status)){
             if(WSTOPSIG(status) == SIGTSTP){
                 std::cout << std::endl; // Child suspended by Ctrl-Z
             }
@@ -84,7 +84,7 @@ void JobControl::handle_SIGCHLD(int sig){
                 std::cout << "child paused somehow" << std::endl;
             }
         } 
-        else if (WIFCONTINUED(status)) {
+        else if (WIFCONTINUED(status)){
             std::cout << "child continued" << std::endl;
         }
     }

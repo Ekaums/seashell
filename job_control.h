@@ -11,6 +11,7 @@ enum class JobState{
 
 struct Job{
     std::string command;
+    pid_t pid;
     pid_t pgid;
     int jobID;
     JobState state;
@@ -42,7 +43,7 @@ class JobControl{
         void block_SIGCHLD();
         void unblock_SIGCHLD();
 
-        void init_job(std::string command, pid_t pgid, int jobID, JobState state, bool isBG);
+        void init_job(std::string command, pid_t pid, pid_t pgid, int jobID, JobState state, bool isBG);
 
         void listJobs();
 

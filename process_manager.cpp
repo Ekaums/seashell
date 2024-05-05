@@ -54,7 +54,7 @@ void ProcessManager::process_parallel(const std::string &arg){
         }
         else{
             setpgid(pid, pid); // Ensure child is in it's own pgroup
-            jobby.init_job(command, pid, jobby.get_next_jobID(), JobState::running, false);        
+            jobby.init_job(command, pid, pid, jobby.get_next_jobID(), JobState::running, false);        
         }
     }
 
@@ -80,7 +80,7 @@ void ProcessManager::process_foreground_command(const std::string &arg){
     else{ // Parent
         setpgid(pid, pid); // Ensure child is in it's own pgroup. Avoids race condition!
 
-        jobby.init_job(arg, pid, jobby.get_next_jobID(), JobState::running, false);
+        jobby.init_job(arg, pid, pid, jobby.get_next_jobID(), JobState::running, false);
 
         tcsetpgrp(STDIN_FILENO, pid); // Set child pgroup as foreground group (Only parent can do this as it is in the CURRENT foreground group)
         

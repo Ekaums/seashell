@@ -48,7 +48,7 @@ void PipeManager::execute_pipe_command(const std::string& pipe_command){
             else{
                 setpgid(rc, group_pid); // Set child's PGID to this group ID
 
-                jobby.init_job(command, group_pid, jobby.get_next_jobID(), JobState::running, false);
+                jobby.init_job(command, rc, group_pid, jobby.get_next_jobID(), JobState::running, false);
 
                 dup2(fd[0], STDIN_FILENO); // Parent will set up input fd to read from this pipe, such that the next process can use this data
                 // Cleanup
@@ -70,7 +70,7 @@ void PipeManager::execute_pipe_command(const std::string& pipe_command){
     else{
         setpgid(rc, group_pid);
 
-        jobby.init_job(command, group_pid, jobby.get_next_jobID(), JobState::running, false);
+        jobby.init_job(command, rc, group_pid, jobby.get_next_jobID(), JobState::running, false);
 
         tcsetpgrp(STDIN_FILENO, group_pid); // Set child pgroup as foreground group
 
