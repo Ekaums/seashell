@@ -17,7 +17,6 @@ void JobControl::init_job(std::string command, pid_t pid, pid_t pgid, int jobID,
         state,
         isBG,
     };
-
     JobList.push_back(newJob);
 }
 
@@ -65,32 +64,31 @@ void JobControl::handle_SIGCHLD(int sig){
 
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
         enter = true;
-        if (WIFEXITED(status)){
-            // Terminated
+        if (WIFEXITED(status) || // Child completed
+        (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)){ // Child killed by Ctrl-C
+            for(auto it = jobby.JobList.begin(); it != jobby.JobList.end(); ){
+                if(it->pid == pid){
+                    jobby.recycle_jobID(it->jobID);
+                    jobby.JobList.erase(it);
+                }
+                else{
+                    it++;
+                }
+            }
         } 
-        else if (WIFSIGNALED(status)){
-            if(WTERMSIG(status) == SIGINT){
-                std::cout << std::endl; // Child killed by Ctrl-C
-            }
-            else{
-                std::cout << "Child killed somehow" << std::endl;
-            }
-        } 
-        else if (WIFSTOPPED(status)){
-            if(WSTOPSIG(status) == SIGTSTP){
-                std::cout << std::endl; // Child suspended by Ctrl-Z
-            }
-            else{
-                std::cout << "child paused somehow" << std::endl;
+        else if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTSTP){ // Child suspended by Ctrl-Z BROKEN DOESNT DETECT CTRL Z
+            std::cout << std::endl;
+            for(auto it = jobby.JobList.begin(); it != jobby.JobList.end(); ){
+                if(it->pid == pid){
+                    it->state = JobState::stopped;
+                }
             }
         } 
         else if (WIFCONTINUED(status)){
             std::cout << "child continued" << std::endl;
         }
     }
-    if(!enter){
-        std::cout << std::endl;
-    }
+    std::cout << pid << std::endl;
 }
 
 

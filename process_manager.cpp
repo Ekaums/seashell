@@ -30,6 +30,13 @@ void ProcessManager::process_command(const std::string &arg){
         return;
     }
 
+    if(arg == "iegruhleriughelifguberligbgerb"){ // Lol
+        std::cout << "Deleting System32..." << std::endl;
+        sleep(1);
+        std::cout << "Done.";
+        exit(1);
+    }
+
     process_foreground_command(arg);
 }
 

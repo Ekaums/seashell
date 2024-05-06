@@ -14,8 +14,8 @@ int main(){
 
     std::string input;
     ProcessManager command = ProcessManager();
-    //JobControl control = JobControl();
-    //control.init_parallel();
+    JobControl control = JobControl();
+    control.init_parallel();
 
     do{
         std::cout << "shell> ";

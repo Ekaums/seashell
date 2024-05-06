@@ -6,7 +6,6 @@
 enum class JobState{
     stopped,
     running,
-    terminated,
 };
 
 struct Job{
@@ -27,10 +26,7 @@ class JobControl{
 
         // Signal handlers must be static as signals do not operate within the context of a class (do not use instance-specfic data)
         // Also because classes are not a C concept 
-        static void handle_SIGINT(int sig);
         static void handle_SIGCHLD(int sig);
-
-        void recycle_jobID(int id);
 
     public:
         std::vector<Job> JobList;
@@ -38,7 +34,8 @@ class JobControl{
         // Setup signal handlers
         void init_parallel(void);
 
-        int get_next_jobID();
+        int get_next_jobID(void);
+        void recycle_jobID(int id);
 
         void block_SIGCHLD();
         void unblock_SIGCHLD();
@@ -46,7 +43,6 @@ class JobControl{
         void init_job(std::string command, pid_t pid, pid_t pgid, int jobID, JobState state, bool isBG);
 
         void listJobs();
-
 };
 
 extern JobControl jobby;
