@@ -88,7 +88,7 @@ void JobControl::handle_SIGCHLD(int sig){
             std::cout << "child continued" << std::endl;
         }
     }
-    std::cout << pid << std::endl;
+
 }
 
 
