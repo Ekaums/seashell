@@ -8,47 +8,47 @@
 
 
 
-void ProcessManager::process_command(const std::string &arg){
+void ProcessManager::process_command(const std::string &command){
 
-    if(arg == "exit" || arg == ""){
+    if(command == "exit" || command == ""){
         return;
     }
     
-    if(arg == "jobs"){
+    if(command == "jobs"){
         jobby.listJobs();
         return;
     }
 
-    if(arg.find('&') != std::string::npos){ // Parallel commands (&)
-        process_parallel(arg);
+    if(command.find('&') != std::string::npos){ // Parallel commands (&)
+        process_parallel(command);
         return;
     }
 
-    if(arg.find('|') != std::string::npos){  // Piping commands (|)
+    if(command.find('|') != std::string::npos){  // Piping commands (|)
         PipeManager pipeManager = PipeManager();
-        pipeManager.execute_pipe_command(arg);
+        pipeManager.execute_pipe_command(command);
         return;
     }
 
-    if(arg == "iegruhleriughelifguberligbgerb"){ // Lol
+    if(command == "this project sux"){ // ;)
         std::cout << "Deleting System32..." << std::endl;
         sleep(1);
         std::cout << "Done.";
         exit(1);
     }
 
-    process_foreground_command(arg);
+    process_foreground_command(command);
 }
 
 
-void ProcessManager::process_parallel(const std::string &arg){
+void ProcessManager::process_parallel(const std::string &command){
 
-    std::istringstream input(arg);
-    std::string command;
+    std::istringstream input(command);
+    std::string arg;
 
     jobby.block_SIGCHLD();
 
-    while(std::getline(input, command, '&')){
+    while(std::getline(input, arg, '&')){
         if (input.eof()){ // Process all commands until the last one
             break;
         }
@@ -56,7 +56,7 @@ void ProcessManager::process_parallel(const std::string &arg){
 
         if(pid == 0){
             setpgid(0, 0); // Every process is placed into its own process group, for job control
-            std::vector<std::string> args = parse_args(command); // Parse args
+            std::vector<std::string> args = parse_args(arg); // Parse args
             execute_process(args);
         }
         else{
@@ -65,29 +65,30 @@ void ProcessManager::process_parallel(const std::string &arg){
         }
     }
 
-    if(command == ""){ // If the last token in the command is '&', there is nothing left to parse
+    if(arg == ""){ // If the last token in the command is '&', there is nothing left to parse
         jobby.unblock_SIGCHLD();
         return;
     }
 
+    std::cout << "last command is " << arg << std::endl;
     // Otherwise, the last command is a foreground job. User must wait for this process to complete before being doing anything
     process_foreground_command(arg);
 }
 
-void ProcessManager::process_foreground_command(const std::string &arg){
+void ProcessManager::process_foreground_command(const std::string &command){
 
     jobby.block_SIGCHLD();
     int pid = fork();
 
     if(pid == 0){ // Child
         setpgid(0, 0); // Place in own process group
-        std::vector<std::string> args = parse_args(arg);  // Parse input, handling I/O redirection accordingly
+        std::vector<std::string> args = parse_args(command);  // Parse input, handling I/O redirection accordingly
         execute_process(args); 
     }
     else{ // Parent
         setpgid(pid, pid); // Ensure child is in it's own pgroup. Avoids race condition!
 
-        jobby.init_job(arg, pid, pid, jobby.get_next_jobID(), JobState::running, false);
+        jobby.init_job(command, pid, pid, jobby.get_next_jobID(), JobState::running, false);
 
         tcsetpgrp(STDIN_FILENO, pid); // Set child pgroup as foreground group (Only parent can do this as it is in the CURRENT foreground group)
         
@@ -110,15 +111,15 @@ void ProcessManager::process_foreground_command(const std::string &arg){
 }
 
 
-void ProcessManager::execute_process(std::vector<std::string> &args){
+void ProcessManager::execute_process(std::vector<std::string> &commands){
         
-    char **exec = new char*[args.size()+1];
+    char **exec = new char*[commands.size()+1];
 
-    for(int i = 0; i < args.size(); i++){
-        exec[i] = &args[i][0]; // Insert all args into array
+    for(int i = 0; i < commands.size(); i++){
+        exec[i] = &commands[i][0]; // Insert all args into array
     }
 
-    exec[args.size()+1] = nullptr;
+    exec[commands.size()+1] = nullptr;
 
     // call execv with these args
     execv(exec[0], exec);

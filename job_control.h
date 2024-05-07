@@ -32,7 +32,7 @@ class JobControl{
         std::vector<Job> JobList;
 
         // Setup signal handlers
-        void init_parallel(void);
+        static void init_parallel(void);
 
         int get_next_jobID(void);
         void recycle_jobID(int id);

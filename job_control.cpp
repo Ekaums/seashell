@@ -60,10 +60,8 @@ void JobControl::recycle_jobID(int id){
 void JobControl::handle_SIGCHLD(int sig){
     int status;
     int pid;
-    bool enter = false;
 
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-        enter = true;
         if (WIFEXITED(status) || // Child completed
         (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)){ // Child killed by Ctrl-C
             for(auto it = jobby.JobList.begin(); it != jobby.JobList.end(); ){
@@ -76,7 +74,7 @@ void JobControl::handle_SIGCHLD(int sig){
                 }
             }
         } 
-        else if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTSTP){ // Child suspended by Ctrl-Z BROKEN DOESNT DETECT CTRL Z
+        else if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTSTP){ // Child suspended by Ctrl-Z
             std::cout << std::endl;
             for(auto it = jobby.JobList.begin(); it != jobby.JobList.end(); ){
                 if(it->pid == pid){

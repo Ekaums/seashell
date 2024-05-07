@@ -36,8 +36,3 @@ $(TARGET): $(OBJS)
 # Clean up
 clean:
 	rm -f $(TARGET) $(OBJS) $(DEPS)
-
-# Clean, compile, and run
-# TODO: Clean this up lol
-go:
-	make clean && make && ./seashell.out
