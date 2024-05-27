@@ -1,10 +1,6 @@
 #include <iostream>
 #include "process_manager.h"
 #include "job_control.h"
-    
-    /* TODO:
-        Singleton refactor. How to inherit?
-    */
 
 
 int main(){
