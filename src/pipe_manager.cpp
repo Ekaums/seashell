@@ -11,7 +11,7 @@ void PipeManager::execute_pipe_command(const std::string& pipe_command){
 
     std::istringstream input(pipe_command);
     std::string command;
-    ProcessManager processManager = ProcessManager();
+    ProcessManager processManager;
 
     int dup_stdin = dup(STDIN_FILENO); // Save terminal output fd, to map output to after we are done piping
 

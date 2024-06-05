@@ -6,7 +6,7 @@
 int main(){
 
     std::string input;
-    ProcessManager command = ProcessManager();
+    ProcessManager command;
     JobControl::init_parallel();
 
     do{

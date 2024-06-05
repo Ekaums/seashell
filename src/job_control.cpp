@@ -6,7 +6,7 @@
 #include <string>
 #include <unistd.h>
 
-JobControl jobby = JobControl();
+JobControl jobby;
 
 void JobControl::init_job(std::string command, pid_t pid, pid_t pgid, int jobID, JobState state, bool isBG){
     Job newJob = {
