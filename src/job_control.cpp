@@ -1,10 +1,10 @@
-#include "job_control.h"
-#include "process_manager.h"
 #include <signal.h>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <unistd.h>
+#include "../include/job_control.h"
+#include "../include/process_manager.h"
 
 JobControl jobby;
 

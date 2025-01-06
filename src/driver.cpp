@@ -1,6 +1,6 @@
 #include <iostream>
-#include "process_manager.h"
-#include "job_control.h"
+#include "../include/process_manager.h"
+#include "../include/job_control.h"
 
 
 int main(){

@@ -1,10 +1,10 @@
-#include "process_manager.h"
-#include "pipe_manager.h"
-#include "job_control.h"
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
 #include <fcntl.h>
+#include "../include/process_manager.h"
+#include "../include/pipe_manager.h"
+#include "../include/job_control.h"
 
 
 

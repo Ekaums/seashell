@@ -2,9 +2,9 @@
 #include <sstream>
 #include <iostream>
 #include <unistd.h>
-#include "pipe_manager.h"
-#include "process_manager.h"
-#include "job_control.h"
+#include "../include/pipe_manager.h"
+#include "../include/process_manager.h"
+#include "../include/job_control.h"
 
 
 void PipeManager::execute_pipe_command(const std::string& pipe_command){
